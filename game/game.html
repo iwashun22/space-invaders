@@ -5,34 +5,6 @@
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Space Invaders</title>
-   <style>
-      #start{
-         outline: none;
-      }
-      h3{
-         margin: 15px 0;
-      }
-      #container{
-         display: flex;
-         flex-wrap: wrap;
-         border: 2px black solid;
-      }
-      .player{
-         background-color: blue;
-      }
-      .bullet{
-         position: relative;
-      }
-      .bullet::before{
-         content: '';
-         position: absolute;
-         background-color: red;
-         width: 4px;
-         height: 100%;
-         left: 50%;
-         transform: translateX( -50%);
-      }
-   </style>
 </head>
 <body>
    <button id="start">start/pause</button>
