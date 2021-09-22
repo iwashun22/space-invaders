@@ -1,9 +1,12 @@
 
 const game = {
    boardWidth: 31,
-   boardHeight: 20,
+   boardHeight: 22  ,
    eachPixel: 15, // in pixel
-   start: null
+   start: null,
+   isStop: true,
+   isOver: true,
+   score: 0
 }
 const middle = Math.floor(game.boardWidth / 2);
 
@@ -15,13 +18,24 @@ const player = {
    ],
    direction: 0,
    bullet: [],
-   cooldown: 5,
+   cooldown: 8,
    countCooldown: 0
+}
+
+const enemies = {
+   position: [],
+   span: game.boardWidth - 4,
+   rows: 5,
+   direction: 1,
+   delay: 20,
+   countDelay: 0,
+   shotEnemies: []
 }
 
 
 //// document element ////
 const container = document.getElementById('container');
+const startbtn = document.getElementById('start');
 let pixel;
 ////////
 
@@ -45,17 +59,32 @@ function newGame(){
       }
    }
    pixel = document.querySelectorAll('.pixel');
-   //console.log(pixel);
+
+   game.start = null;
+   game.isStop = true;
+   game.isOver =  true;
+   game.score = 0;
+
+   player.direction = 0;
+   player.countCooldown = 0;
+   player.bullet = [];
+
+   enemies.position = [];
+   enemies.direction = 1;
+   enemies.countDelay = enemies.delay;
+   enemies.shotEnemies = [];
+
    set();
 }
 newGame();
 
 ////////////////////////////
 function set(){
+   game.isOver = false;
    createPlayer();
-   //createEnemies();
+   createEnemies();
 
-   game.start = setInterval(startGame, 70);
+   game.start = setInterval(startGame, 100);
 }
 
 function createPlayer(){
@@ -68,19 +97,39 @@ function createPlayer(){
    }
 }
 
+function createEnemies(){
+   enemies.position = [];
+   for(let i = 0; i < enemies.rows; i++){
+      for(let j = 0; j < enemies.span; j++){
+         enemies.position.push((i * game.boardWidth) + j + game.boardWidth);
+      }
+   }
+   enemies.position.forEach(enemy => {
+      pixel[enemy].classList.add('enemy');
+   })
+
+
+}
+
 
 ////////////////////////////
 function startGame(){
-   movePlayer();
-   moveBullet();
-   //moveEnemies();
+   if(!game.isStop){
 
-   drawPlayer();
-   drawBullet();
-   //drawEnemies();
-
-   //checkHit();
+      movePlayer();
+      moveBullet();
+      moveEnemies();
+      
+      drawPlayer();
+      drawBullet();
+      drawEnemies();
+      
+      checkHit();
+   }
 }
+
+let left;
+let right;
 
 function movePlayer(){
    if(   (player.shape[0][0] % game.boardWidth === 1 && player.direction === -1) || 
@@ -111,6 +160,35 @@ function moveBullet(){
       player.countCooldown--;
 }
 
+function moveEnemies(){
+
+   if(enemies.countDelay == 0){
+
+      const left = enemies.position.filter(enemy => enemy )[0];
+      const right = enemies.position[enemies.position.length - 1];
+      
+      if((  left % game.boardWidth == 0 && enemies.direction == -1) ||
+         (  right % game.boardWidth == game.boardWidth - 1 && enemies.direction == 1)) 
+      enemies.direction = game.boardWidth;
+      
+      else if(enemies.direction == game.boardWidth && left % game.boardWidth == 0)
+         enemies.direction = 1;
+
+      else if(enemies.direction == game.boardWidth && right % game.boardWidth == game.boardWidth - 1)
+         enemies.direction = -1;
+      
+      enemies.position = enemies.position.map(enemy =>
+         enemy + enemies.direction);
+
+      enemies.shotEnemies = enemies.shotEnemies.map(shot => 
+         shot + enemies.direction);
+
+      enemies.countDelay = enemies.delay;
+   }
+
+   enemies.countDelay--;
+}
+
 function drawPlayer(){
    pixel.forEach(element => {
       element.classList.remove('player');
@@ -132,22 +210,80 @@ function drawBullet(){
    player.bullet.forEach(element => {
       //console.log(element)
       pixel[element].classList.add('bullet');
+      if(
+         pixel[element].classList.contains('enemy')
+      ){
+         game.score++;
+
+         pixel[element].classList.remove('enemy');
+         pixel[element].classList.remove('bullet');
+         player.bullet = player.bullet.filter(bullet => bullet != element);
+         enemies.shotEnemies.push(element);
+
+      }
    })
 }
 
-let repeating = true;
-let repeatRateTimer = null; 
+function drawEnemies(){
+   pixel.forEach(element => {
+      element.classList.remove('enemy');
+   });
+   enemies.position.forEach(enemy => {
+      pixel[enemy].classList.add('enemy');
+   })
+
+   enemies.shotEnemies.forEach(shot => {
+      pixel[shot].classList.remove('enemy');
+   })
+}
+
+function checkHit(){
+   for(let i = 0; i < player.shape.length; i++){
+      player.shape[i].forEach(element => {
+         const body = Number(element) + ((Number(game.boardHeight - 2 + i)) * Number(game.boardWidth));
+         if(
+            pixel[body].classList.contains('enemy')
+         ){
+            clearInterval(game.start);
+            game.isOver = true;
+            game.isStop = true;
+            setTimeout(() => alert('game over'), 200);
+         }
+      })
+   }
+}
+
+
+startbtn.onclick = (event) => {
+   if(event.pointerType === 'mouse'){
+      if(!game.isStop && !game.isOver){
+         game.isStop = true;
+         clearInterval(game.start);
+      }
+      else if(game.isStop && !game.isOver){
+         game.isStop =  false;
+         game.start = setInterval(startGame, 100);
+      }
+      else if(game.isOver){
+         newGame();
+      }
+   }
+}
 
 document.addEventListener('keydown', (e) => {
  
-   if(e.key === ' '){
-      createBullet();
-   }
-   else if(e.key === 'ArrowRight'){
-      player.direction = 1;
-   }
-   else if(e.key === 'ArrowLeft'){
-      player.direction = -1;
+   if(!game.isStop){
+
+      if(e.key === ' '){
+         createBullet();
+      }
+      else if(e.key === 'ArrowRight'){
+         player.direction = 1;
+      }
+      else if(e.key === 'ArrowLeft'){
+         player.direction = -1;
+      }
+
    }
    
 });
