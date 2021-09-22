@@ -2,7 +2,7 @@
 
 ### Controller
 
-`Keyboard` | `Movement`
+`Key` | `Movement`
 ---------|---------
 right arrow | move to right
 left arrow | move to left
