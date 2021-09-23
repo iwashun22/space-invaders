@@ -6,7 +6,8 @@ const game = {
    start: null,
    isStop: true,
    isOver: true,
-   score: 0
+   score: 0,
+   speed: 70 // in milliseconds
 }
 const middle = Math.floor(game.boardWidth / 2);
 
@@ -61,30 +62,32 @@ function newGame(){
    pixel = document.querySelectorAll('.pixel');
 
    game.start = null;
-   game.isStop = true;
-   game.isOver =  true;
    game.score = 0;
 
    player.direction = 0;
    player.countCooldown = 0;
    player.bullet = [];
+   player.shape = [
+      [middle],
+      [middle - 1, middle, middle + 1]
+   ];
 
    enemies.position = [];
    enemies.direction = 1;
    enemies.countDelay = enemies.delay;
    enemies.shotEnemies = [];
 
-   set();
 }
 newGame();
 
 ////////////////////////////
 function set(){
    game.isOver = false;
+   game.isStop = false;
    createPlayer();
    createEnemies();
 
-   game.start = setInterval(startGame, 100);
+   game.start = setInterval(startGame, game.speed);
 }
 
 function createPlayer(){
@@ -244,10 +247,7 @@ function checkHit(){
          if(
             pixel[body].classList.contains('enemy')
          ){
-            clearInterval(game.start);
-            game.isOver = true;
-            game.isStop = true;
-            setTimeout(() => alert('game over'), 200);
+            gameOver();
          }
       })
    }
@@ -258,14 +258,21 @@ startbtn.onclick = (event) => {
    if(event.pointerType === 'mouse'){
       if(!game.isStop && !game.isOver){
          game.isStop = true;
+         startbtn.innerText = 'continue';
+         startbtn.className = 'green';
          clearInterval(game.start);
       }
       else if(game.isStop && !game.isOver){
          game.isStop =  false;
-         game.start = setInterval(startGame, 100);
+         startbtn.innerText = 'stop';
+         startbtn.className = 'red';
+         game.start = setInterval(startGame, game.speed);
       }
       else if(game.isOver){
+         startbtn.innerText = 'pause';
+         startbtn.className = 'red';
          newGame();
+         set();
       }
    }
 }
@@ -296,4 +303,13 @@ function createBullet(){
       drawBullet();
       player.countCooldown = player.cooldown;
    }
+}
+
+function gameOver(){
+   clearInterval(game.start);
+   game.isOver = true;
+   game.isStop = true;
+   startbtn.innerText = 'start';
+   startbtn.className = 'green';
+   setTimeout(() => alert('game over'), 200);
 }
