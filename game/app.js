@@ -228,16 +228,30 @@ function drawBullet(){
 }
 
 function drawEnemies(){
+   let enemyIsOnTheFloor = false;
    pixel.forEach(element => {
       element.classList.remove('enemy');
    });
+
    enemies.position.forEach(enemy => {
-      pixel[enemy].classList.add('enemy');
+      if(
+         !enemies.shotEnemies.includes(enemy) && 
+         enemy < (game.boardWidth * game.boardHeight)
+      )
+      {
+         pixel[enemy].classList.add('enemy');
+         // check if the enemy is on the floor
+         if(
+            (game.boardHeight - 1) * game.boardWidth <= enemy 
+         )
+         enemyIsOnTheFloor = true;
+      }
+
    })
 
-   enemies.shotEnemies.forEach(shot => {
-      pixel[shot].classList.remove('enemy');
-   })
+   if(enemyIsOnTheFloor){
+      gameOver();
+   }
 }
 
 function checkHit(){
