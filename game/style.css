@@ -1,16 +1,30 @@
 #start {
   outline: none;
-  background-color: #ff9191;
   border: 2px black solid;
+  min-width: 100px;
+  text-align: center;
 }
 
-#start:hover {
-  background-color: #ac3434;
+.green{
+  background-color: rgb(185, 255, 185);
+}
+.green:hover{
+  background-color: rgb(80, 255, 80);
+}
+.green:active{
+  background-color: rgb(185, 255, 185);
 }
 
-#start:active {
-  background-color: #ff9191;
+.red{
+  background-color: rgb(255, 185, 185);
 }
+.red:hover{
+  background-color: rgb(255, 80, 80);
+}
+.red:active{
+  background-color: rgb(255, 185, 185);
+}
+
 
 h3 {
   margin: 15px 0;
