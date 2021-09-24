@@ -19,7 +19,7 @@ const player = {
    ],
    direction: 0,
    bullet: [],
-   cooldown: 8,
+   cooldown: 8, // this variable is prevent from users to spam shooting, so then it will be too easy
    countCooldown: 0
 }
 
@@ -118,6 +118,8 @@ function createEnemies(){
 ////////////////////////////
 function startGame(){
    if(!game.isStop){
+
+         checkGame();
 
       movePlayer();
       moveBullet();
@@ -250,7 +252,7 @@ function drawEnemies(){
    })
 
    if(enemyIsOnTheFloor){
-      gameOver();
+      endGame('game over');
    }
 }
 
@@ -261,7 +263,7 @@ function checkHit(){
          if(
             pixel[body].classList.contains('enemy')
          ){
-            gameOver();
+            endGame('game over');
          }
       })
    }
@@ -319,11 +321,30 @@ function createBullet(){
    }
 }
 
-function gameOver(){
+function endGame(msg){
    clearInterval(game.start);
    game.isOver = true;
    game.isStop = true;
    startbtn.innerText = 'start';
    startbtn.className = 'green';
-   setTimeout(() => alert('game over'), 200);
+   setTimeout(() => alert(msg), 200);
+}
+
+function checkGame(){
+   if(
+      enemies.position.length <= enemies.shotEnemies.length &&
+      shotAllEnemies()
+   ){
+      endGame('You win!');
+   }
+}
+
+function shotAllEnemies(){
+   let allEnemies = true;
+   enemies.position.forEach(enemy => {
+      if(!enemies.shotEnemies.includes(enemy)){
+         allEnemies = false;
+      }
+   })
+   return allEnemies;
 }
