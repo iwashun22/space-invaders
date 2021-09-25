@@ -6,7 +6,6 @@ const game = {
    start: null,
    isStop: true,
    isOver: true,
-   score: 0,
    speed: 70 // in milliseconds
 }
 const middle = Math.floor(game.boardWidth / 2);
@@ -30,13 +29,19 @@ const enemies = {
    direction: 1,
    delay: 20,
    countDelay: 0,
-   shotEnemies: []
+   shotEnemies: [],
+   bullet: [],
+   cooldown: 10,
+   countCooldown: 0,
+   bulletDelay: 2,
+   countBulletDelay: 0
 }
 
 
 //// document element ////
 const container = document.getElementById('container');
 const startbtn = document.getElementById('start');
+const scores = document.getElementById('scores');
 let pixel;
 ////////
 
@@ -62,7 +67,6 @@ function newGame(){
    pixel = document.querySelectorAll('.pixel');
 
    game.start = null;
-   game.score = 0;
 
    player.direction = 0;
    player.countCooldown = 0;
@@ -76,6 +80,9 @@ function newGame(){
    enemies.direction = 1;
    enemies.countDelay = enemies.delay;
    enemies.shotEnemies = [];
+   enemies.bullet = [];
+   enemies.countCooldown = 0;
+   enemies.countBulletDelay = 0;
 
 }
 newGame();
@@ -119,22 +126,48 @@ function createEnemies(){
 function startGame(){
    if(!game.isStop){
 
-         checkGame();
+      checkGame();
+
+      createRandomBullet();
 
       movePlayer();
+      moveEnemiesBullet();
       moveBullet();
       moveEnemies();
       
       drawPlayer();
+      drawEnemiesBullet();
       drawBullet();
       drawEnemies();
       
       checkHit();
+
+      displayScore();
    }
 }
 
 let left;
 let right;
+
+function moveEnemiesBullet(){
+   if(enemies.countBulletDelay == 0){
+
+      enemies.bullet = enemies.bullet.map(b => b + game.boardWidth);
+      enemies.bullet = enemies.bullet.filter(b => 
+         0 <= b && b < game.boardWidth * game.boardHeight);
+         
+         enemies.countCooldown <= 0 ?
+            enemies.countCooldown = enemies.cooldown
+         :
+            enemies.countCooldown--;
+      
+      enemies.countBulletDelay = enemies.bulletDelay;
+   }
+
+   enemies.countBulletDelay--;
+
+   checkGame();
+}
 
 function movePlayer(){
    if(   (player.shape[0][0] % game.boardWidth === 1 && player.direction === -1) || 
@@ -152,17 +185,15 @@ function movePlayer(){
 }
 
 function moveBullet(){
-   for(let i = 0; i < player.bullet.length; i++){
-      player.bullet[i] -= game.boardWidth;
-   }
-
-   player.bullet = player.bullet.filter(element => 
-      0 <= element && element < game.boardWidth * game.boardHeight);
+   player.bullet = player.bullet.map(b => b - game.boardWidth);
+   player.bullet = player.bullet.filter(b => 
+      0 <= b && b < game.boardWidth * game.boardHeight);
 
    player.countCooldown <= 0 ?
       player.countCooldown = 0
    :
       player.countCooldown--;
+
 }
 
 function moveEnemies(){
@@ -171,17 +202,17 @@ function moveEnemies(){
 
       const left = enemies.position.filter(enemy => enemy )[0];
       const right = enemies.position[enemies.position.length - 1];
-      
-      if((  left % game.boardWidth == 0 && enemies.direction == -1) ||
-         (  right % game.boardWidth == game.boardWidth - 1 && enemies.direction == 1)) 
-      enemies.direction = game.boardWidth;
-      
-      else if(enemies.direction == game.boardWidth && left % game.boardWidth == 0)
-         enemies.direction = 1;
 
-      else if(enemies.direction == game.boardWidth && right % game.boardWidth == game.boardWidth - 1)
-         enemies.direction = -1;
-      
+         if((  left % game.boardWidth == 0 && enemies.direction == -1) ||
+            (  right % game.boardWidth == game.boardWidth - 1 && enemies.direction == 1)) 
+            enemies.direction = game.boardWidth;
+
+         else if(enemies.direction == game.boardWidth && left % game.boardWidth == 0)
+            enemies.direction = 1;
+
+         else if(enemies.direction == game.boardWidth && right % game.boardWidth == game.boardWidth - 1)
+            enemies.direction = -1;
+
       enemies.position = enemies.position.map(enemy =>
          enemy + enemies.direction);
 
@@ -207,6 +238,16 @@ function drawPlayer(){
    }
 }
 
+function drawEnemiesBullet(){
+   pixel.forEach(element => {
+      element.classList.remove('e-bullet');
+   });
+
+   enemies.bullet.forEach(element => {
+      pixel[element].classList.add('e-bullet');
+   });
+}
+
 function drawBullet(){
    pixel.forEach(element => {
       element.classList.remove('bullet');
@@ -218,7 +259,6 @@ function drawBullet(){
       if(
          pixel[element].classList.contains('enemy')
       ){
-         game.score++;
 
          pixel[element].classList.remove('enemy');
          pixel[element].classList.remove('bullet');
@@ -261,12 +301,25 @@ function checkHit(){
       player.shape[i].forEach(element => {
          const body = Number(element) + ((Number(game.boardHeight - 2 + i)) * Number(game.boardWidth));
          if(
-            pixel[body].classList.contains('enemy')
+            pixel[body].classList.contains('enemy') ||
+            pixel[body].classList.contains('e-bullet')
          ){
+            pixel[body].classList.add('hit');
+            pixel[body].classList.remove('e-bullet');
             endGame('game over');
          }
       })
    }
+}
+
+function displayScore(){
+   const totalEnemies = enemies.span * enemies.rows
+   const aliveEnemy = document.getElementsByClassName('enemy');
+   const shotEnemy = totalEnemies -  aliveEnemy.length;
+   
+   const percent = Math.floor(shotEnemy / totalEnemies * 100);
+
+   scores.innerText = `${percent}%`;
 }
 
 
@@ -322,12 +375,14 @@ function createBullet(){
 }
 
 function endGame(msg){
-   clearInterval(game.start);
-   game.isOver = true;
-   game.isStop = true;
-   startbtn.innerText = 'start';
-   startbtn.className = 'green';
-   setTimeout(() => alert(msg), 200);
+   if(!game.isOver){
+      clearInterval(game.start);
+      game.isOver = true;
+      game.isStop = true;
+      startbtn.innerText = 'start';
+      startbtn.className = 'green';
+      setTimeout(() => alert(msg), 200);
+   }
 }
 
 function checkGame(){
@@ -337,6 +392,29 @@ function checkGame(){
    ){
       endGame('You win!');
    }
+
+   enemies.bullet.forEach(b => {
+      const infront = b + game.boardWidth;
+      if(
+         pixel[b].classList.contains('bullet')
+      ){
+         pixel[b].classList.remove('bullet');
+         pixel[b].classList.remove('e-bullet');
+         enemies.bullet = enemies.bullet.filter(i => i != b);
+         player.bullet = player.bullet.filter(i => i != b);
+      }
+
+      if(infront < game.boardWidth * game.boardHeight){
+         if(
+            pixel[infront].classList.contains('bullet')
+            ){
+               pixel[infront].classList.remove('bullet');
+               pixel[b].classList.remove('e-bullet');
+               enemies.bullet = enemies.bullet.filter(i => i != b);
+               player.bullet = player.bullet.filter(i => i != infront);
+            }
+      }
+   })
 }
 
 function shotAllEnemies(){
@@ -347,4 +425,31 @@ function shotAllEnemies(){
       }
    })
    return allEnemies;
+}
+
+///////////////
+
+function createRandomBullet(){
+   if(enemies.countCooldown == 0){
+      if(Math.random() * 10 < 6){
+         let aliveEnemy = [];
+         enemies.position.forEach(enemy => {
+            if(
+               !enemies.shotEnemies.includes(enemy) &&
+               enemy < (game.boardWidth * game.boardHeight)
+            ){
+               aliveEnemy.push(enemy);
+            }
+         });
+         //console.log(aliveEnemy.length);
+
+         const random = Math.floor(Math.random() * aliveEnemy.length);
+         const shoot = aliveEnemy[random];
+         //console.log(pixel[enemy]);
+         enemies.bullet.push(shoot);
+         pixel[shoot].classList.add('e-bullet');
+
+         enemies.countCooldown = enemies.cooldown;
+      }
+   }
 }
