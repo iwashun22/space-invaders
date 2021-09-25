@@ -40,9 +40,13 @@ h3 {
   background-color: blue;
 }
 
+.hit{
+  background-color: red;
+}
+
 .enemy{
-   background-color: green;
-   border-radius: 50%;
+  background-color: green;
+  border-radius: 50%;
 }
 
 .bullet {
@@ -52,6 +56,19 @@ h3 {
   content: '';
   position: absolute;
   background-color: red;
+  width: 4px;
+  height: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.e-bullet{
+  position: relative;
+}
+.e-bullet::before{
+  content: '';
+  position: absolute;
+  background-color: purple;
   width: 4px;
   height: 100%;
   left: 50%;
